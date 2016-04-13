@@ -1,0 +1,192 @@
+using UnityEngine;
+using System.Collections;
+using UnityEngine.UI;
+
+public class Game : MonoBehaviour {
+
+	public static int gridWidth = 10;
+	public static int gridHeight = 20;
+	public static Transform[,] Grid = new Transform[gridWidth, gridHeight];
+	private GameObject previewTetromino;
+	private GameObject nextTetromino;
+	private bool gameStarted = false;
+	public int scoreOneLine = 40;
+	public int scoreTwoLine = 100;
+	public int cont = 0;
+	private int numerOfRowsThisTurn = 0;
+	public Text hud_score;
+	public static int currentScore = 0;
+	private Vector2 previewTetrominoPosition = new Vector2 (13.88f, 11.08f);
+
+
+	// Use this for initialization
+	void Start () {
+		SpawnNextTetromino ();
+
+
+		//AudioSource = GetComponent<AudioSource> ();
+	} 
+
+	void Update () {
+		Checks ();
+		UpdateScore ();
+		UpdateUI ();
+	}
+		
+	// Update is called once per frame
+	public void UpdateScore(){
+		if (numerOfRowsThisTurn > 0) {
+
+			if (numerOfRowsThisTurn == 1) {
+				ClearedOneLine ();
+			} else if (numerOfRowsThisTurn == 2) {
+				ClearedTwoLine ();
+			}
+			numerOfRowsThisTurn = 0;
+		}
+	}
+
+	public void Checks(){
+
+		for (int y = 0; y < gridHeight; ++y) {
+			for (int x = 0; x < gridWidth; ++x) {
+				if (Grid [x, y] != null) {
+
+					if (Grid [x, y].tag == "CARBONO") {
+						Debug.Log ("EXISTE C: ");
+						if (Grid [x + 1, y].tag == "HIDROGENIO") {
+							cont++;
+						}
+						if (Grid [x - 1, y].tag == "HIDROGENIO") {
+							cont++;
+						}
+						if (Grid [x, y + 1].tag == "HIDROGENIO") {
+							cont++;
+						}
+						if (Grid [x, y - 1].tag == "HIDROGENIO") {
+							cont++;
+						}
+					}
+					Debug.Log ("contador: " + cont); //teste
+				}
+			}
+		}
+	}
+
+	public void UpdateUI(){
+		hud_score.text = currentScore.ToString ();
+	}
+
+
+
+	public void ClearedOneLine(){
+		currentScore += scoreOneLine;
+	}
+	public void ClearedTwoLine(){
+		currentScore += scoreTwoLine;
+	}
+
+	public bool CheckIsAboveGrid(Tetromino tetromino){
+		for(int x = 0; x < gridWidth; ++x){
+			foreach(Transform mino in tetromino.transform){
+				Vector2 pos = Round (mino.position);
+				if(pos.y > gridHeight - 1){
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	public bool IsFullRowAt(int y){
+		for (int x = 0; x < gridWidth; ++x){
+			if(Grid[x,y] = null){
+				return false;
+			}
+		}
+		numerOfRowsThisTurn++;
+		return true;
+	}
+
+	public void updateGrid (Tetromino tetromino) {
+		for (int y = 0; y <gridHeight; ++y) {
+			for (int x = 0; x <gridWidth; ++x) {
+				if (Grid [x, y] != null) {
+					if (Grid [x, y].parent == tetromino.transform) {
+						Grid [x, y] = null;
+					}
+				}
+			}
+		}
+		foreach (Transform mino in tetromino.transform) {
+			Vector2 pos = Round (mino.position);
+			if (pos.y < gridHeight) {
+				Grid [(int)pos.x, (int)pos.y] = mino;
+			}
+		}
+	}
+	public Transform GetTransformAtGetPosition (Vector2 pos) {
+		if (pos.y > gridHeight - 1) {
+			return null;
+		} else {
+			return Grid [(int)pos.x, (int)pos.y];
+		}
+
+	}
+
+	public void SpawnNextTetromino () {
+		if (!gameStarted) {
+
+			gameStarted = true;
+			nextTetromino = (GameObject)Instantiate(Resources.Load(GetRandomTetromino(), typeof(GameObject)), new Vector2 (5.0f, 22.0f), Quaternion.identity);
+			previewTetromino = (GameObject)Instantiate (Resources.Load (GetRandomTetromino (), typeof(GameObject)), previewTetrominoPosition, Quaternion.identity);
+			previewTetromino.GetComponent<Tetromino> ().enabled = false;
+		
+		} else {
+			previewTetromino.transform.localPosition = new Vector2 (5.0f, 20.0f);
+			nextTetromino = previewTetromino;
+			nextTetromino.GetComponent<Tetromino> ().enabled = true;
+
+			previewTetromino = (GameObject)Instantiate (Resources.Load (GetRandomTetromino (), typeof(GameObject)), previewTetrominoPosition, Quaternion.identity);
+			previewTetromino.GetComponent<Tetromino> ().enabled = false;
+		}
+		 
+	}
+
+
+	public bool CheckIsInsideGrid (Vector2 pos){
+		return ((int)pos.x >= 0 && (int)pos.x < gridWidth && (int)pos.y >= 0);
+	}
+
+	public Vector2 Round (Vector2 pos){
+		return new Vector2 (Mathf.Round(pos.x), Mathf.Round(pos.y));
+	}
+
+	string GetRandomTetromino(){
+		int randomTetromino = Random.Range (1, 5);
+		string randomTetrominoName = "Prefabs/C";
+		switch (randomTetromino) {
+		case 1:
+			randomTetrominoName = "Prefabs/H";
+			break;
+		case 2:
+			randomTetrominoName = "Prefabs/C";
+			break;
+		case 3:
+			randomTetrominoName = "Prefabs/H";
+			break;
+		case 4:
+			randomTetrominoName = "Prefabs/C";
+			break;
+		
+		}
+		return randomTetrominoName;
+
+		
+	}
+
+	public void GameOver(){
+		Application.LoadLevel ("GameOver");
+	}
+
+}
